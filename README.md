@@ -114,7 +114,7 @@ streamlit run app.py
 - `streamlit.components.v1.html()` で Three.js コードを埋め込み
 
 ### JavaScript 側 (Three.js)
-- **Three.js 0.160.0** をCDNから読み込み
+- **Three.js 0.170.0** をCDNから読み込み
 - **GLTFLoader**: .glb ファイルのロード
 - **WebGLRenderer**: GPU 加速レンダリング
   - `powerPreference: 'high-performance'` で GPU 優先
