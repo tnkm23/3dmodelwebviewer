@@ -1,0 +1,156 @@
+ <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{
+                margin: 0;
+                overflow: hidden;
+            }}
+            #viewer-container {{
+                width: 100%;
+                height: 100vh;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="viewer-container"></div>
+        
+        <script type="importmap">
+        {{
+            "imports": {{
+                "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+            }}
+        }}
+        </script>
+        
+        <script type="module">
+            import * as THREE from 'three';
+            import {{ GLTFLoader }} from 'three/addons/loaders/GLTFLoader.js';
+            import {{ OrbitControls }} from 'three/addons/controls/OrbitControls.js';
+            
+            // シーン設定
+            const container = document.getElementById('viewer-container');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color('{bg_color}');
+            
+            // カメラ設定
+            const camera = new THREE.PerspectiveCamera(
+                45,
+                {width} / {height},
+                0.1,
+                1000
+            );
+            camera.position.set(0, 2, 5);
+            
+            // レンダラー設定（GPU活用）
+            const renderer = new THREE.WebGLRenderer({{
+                antialias: true,
+                powerPreference: 'high-performance' // GPU優先
+            }});
+            renderer.setSize({width}, {height});
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+            container.appendChild(renderer.domElement);
+            
+            // ライト設定
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            const pointLight = new THREE.PointLight(0xffffff, 0.5);
+            pointLight.position.set(-5, 5, -5);
+            scene.add(pointLight);
+            
+            // グリッドヘルパー
+            if ({show_grid}) {{
+                const gridHelper = new THREE.GridHelper(10, 10);
+                scene.add(gridHelper);
+            }}
+            
+            // 軸ヘルパー
+            const axesHelper = new THREE.AxesHelper(2);
+            scene.add(axesHelper);
+            
+            // コントロール設定
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = {auto_rotate};
+            controls.autoRotateSpeed = 2.0;
+            
+            // GLTFローダー
+            const loader = new GLTFLoader();
+            
+            // Base64データをBlobに変換
+            const glbData = atob('{glb_base64}');
+            const glbArray = new Uint8Array(glbData.length);
+            for (let i = 0; i < glbData.length; i++) {{
+                glbArray[i] = glbData.charCodeAt(i);
+            }}
+            const glbBlob = new Blob([glbArray], {{ type: 'model/gltf-binary' }});
+            const glbUrl = URL.createObjectURL(glbBlob);
+            
+            // モデルロード
+            loader.load(
+                glbUrl,
+                function(gltf) {{
+                    const model = gltf.scene;
+                    
+                    // モデルのバウンディングボックスを計算してカメラ位置を調整
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 2.5; // オフセット
+                    
+                    camera.position.set(center.x, center.y + maxDim * 0.5, center.z + cameraZ);
+                    camera.lookAt(center);
+                    controls.target.copy(center);
+                    
+                    // シャドウ設定
+                    model.traverse((node) => {{
+                        if (node.isMesh) {{
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }}
+                    }});
+                    
+                    scene.add(model);
+                    console.log('Model loaded successfully');
+                }},
+                function(xhr) {{
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                }},
+                function(error) {{
+                    console.error('Error loading model:', error);
+                }}
+            );
+            
+            // アニメーションループ
+            function animate() {{
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }}
+            animate();
+            
+            // リサイズ対応
+            window.addEventListener('resize', () => {{
+                camera.aspect = {width} / {height};
+                camera.updateProjectionMatrix();
+                renderer.setSize({width}, {height});
+            }});
+        </script>
+    </body>
+    </html>
