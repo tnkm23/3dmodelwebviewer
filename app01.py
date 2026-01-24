@@ -68,7 +68,7 @@ else:
 st.sidebar.header("ビューア設定")
 width = st.sidebar.slider("幅 (px)", 400, 1200, 800)
 height = st.sidebar.slider("高さ (px)", 300, 900, 600)
-bg_color = st.sidebar.color_picker("背景色", "#1a1a1a")
+bg_color = st.sidebar.color_picker("背景色", "#C4C3C3")
 show_grid = st.sidebar.checkbox("グリッド表示", True)
 auto_rotate = st.sidebar.checkbox("自動回転", False)
 
