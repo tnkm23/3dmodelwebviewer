@@ -93,3 +93,5 @@ SELECT 'heat_exchanger', COUNT(*) FROM "heat_exchanger";
 
 -- Fan listの最新レコードを確認
 SELECT * FROM "Fan list" ORDER BY id DESC LIMIT 10;
+
+
