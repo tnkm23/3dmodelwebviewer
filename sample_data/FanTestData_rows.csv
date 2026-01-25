@@ -1,0 +1,2 @@
+fantestdataID,id,fanID,FanName,created_at,TestDate,tested_at,test_facillity,comment,SingleFanTest,bellmouth,Unit,Hako,Hex,temp_o_[degC],temp_c_[defC],Ps_[Pa],Q_[m3min],Torque_[mNm],Power_[W],SPL_[dbA]
+9efc6e47-bc57-4636-a45f-642026256da2,3,058475ae-2b97-4a17-b56e-2abdf84d16c5,testfanA01,2026-01-24 14:27:21.05554+00,2026-01-26,tokyo,"{""facility"":""A-101""}",26K製品向け高効率試作ファン,true,26Kbell,,,,20.1,21.2,"[10,9,8,7,6]","[5,4,3,2,1]","[7,6,5,4,3]","[9,8,7,6,5]","[44,43,42,41,40]"
