@@ -2,11 +2,6 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
-CREATE TABLE public.Aaaa (
-  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT Aaaa_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.Fan list (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -110,16 +105,6 @@ CREATE TABLE public.compressor (
   ステータス character varying DEFAULT 'active'::character varying,
   更新日時 timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT compressor_pkey PRIMARY KEY (圧縮機_id)
-);
-CREATE TABLE public.devices (
-  device_id character varying NOT NULL,
-  device_name character varying NOT NULL,
-  manufacturer character varying,
-  model character varying,
-  calibration_date date,
-  status character varying DEFAULT 'active'::character varying,
-  created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT devices_pkey PRIMARY KEY (device_id)
 );
 CREATE TABLE public.fan (
   ファン_id character varying NOT NULL,
