@@ -1,4 +1,16 @@
+# Webアプリケーション用パッケージ
 streamlit>=1.28.0
+
+# データベース用パッケージ
 psycopg2-binary==2.9.11
 sqlalchemy==2.0.46
 plotly>=5.0.0
+#  未インストールの場合
+# pillow
+
+# 3Dモデル処理用パッケージ
+# stl to gbl 変換
+trimesh[easy]
+
+# FreeCAD Pythonモジュール
+freecad
