@@ -6,7 +6,6 @@ DBからカラム1（上位包含）、カラム2（下位包含）のリスト�
 '''
 
 import streamlit as st
-import os
 from pathlib import Path
 import streamlit.components.v1 as components
 
@@ -243,47 +242,52 @@ else:
     st.info("試験データが見つかりません")
 
 
-# .glb ファイルを検索
-def find_glb_files(base_path="./models"):
-    """指定されたディレクトリから.glbファイルを検索"""
-    glb_files = []
-    if os.path.exists(base_path):
-        for root, dirs, files in os.walk(base_path):
-            for file in files:
-                if file.endswith('.glb'):
-                    file_path = os.path.join(root, file)
-                    glb_files.append(file_path)
-    return glb_files
+def pick_model_identifier(row):
+    keys = [
+        "model",
+        "Model",
+        "model_name",
+        "ModelName",
+        "model_path",
+        "model_glb",
+        "FanModel",
+        "fan_model",
+        "fan_model_name",
+        "FanName",
+        "fanID",
+        "id",
+    ]
+    for key in keys:
+        if key in row and row.get(key):
+            return str(row.get(key))
+    return None
 
-# .glbファイルのリストを取得
-models_dir = "./models"
-glb_files = find_glb_files(models_dir)
 
-if not glb_files:
-    st.sidebar.warning(f"'{models_dir}' ディレクトリに .glb ファイルが見つかりません")
-    st.info("""
-    ### 使い方
-    1. プロジェクトルートに `models` ディレクトリを作成
-    2. .glb ファイルを `models` ディレクトリに配置
-    3. このアプリをリロード
-    """)
-    
-    # デモ用のサンプルパス表示
-    st.sidebar.info("サンプル: ./models/sample.glb")
-    selected_file = None
-else:
-    # ファイル名のみ表示用リストを作成
-    file_names = [os.path.basename(f) for f in glb_files]
-    
-    # ファイル選択
-    selected_index = st.sidebar.selectbox(
-        "モデルを選択",
-        range(len(file_names)),
-        format_func=lambda i: file_names[i]
-    )
-    
-    selected_file = glb_files[selected_index]
+def resolve_glb_path(model_identifier, base_dir=".models"):
+    base_path = Path(base_dir)
+    if not base_path.exists():
+        raise FileNotFoundError(f"モデルディレクトリ {base_path} が見つかりません。")
 
+    raw = Path(model_identifier)
+    candidates = []
+
+    if raw.is_absolute() and raw.exists():
+        return raw
+
+    if raw.suffix.lower() == ".glb":
+        candidates.append(base_path / raw.name)
+        candidates.append(base_path / raw.name.lower())
+    else:
+        candidates.append(base_path / f"{raw.stem}.glb")
+        candidates.append(base_path / f"{raw.name}.glb")
+
+    candidates.extend(base_path.glob(f"{raw.stem}*.glb"))
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    raise FileNotFoundError(f"モデル {model_identifier} の.glbが {base_path} に見つかりません。")
 
 
 # ビューア設定
@@ -306,40 +310,56 @@ with col3:
     if st.button("🔍 リロード"):
         st.rerun()
 
-# Three.jsビューアの埋め込み
-if selected_file:
-    # ファイルパスをBase64エンコードして埋め込むか、直接パスを使用
-    # ここではシンプルにファイルを読み込んでBase64エンコード
-    import base64
-    
-    with open(selected_file, 'rb') as f:
-        glb_data = f.read()
-        glb_base64 = base64.b64encode(glb_data).decode()
+st.subheader("3D ビューア")
 
-    # Three.js + GLTFLoader を使用した3Dビューア
-    template = Path("three_html/viewer01.html").read_text(encoding="utf-8")
-    threejs_html = template.format(
-        bg_color=bg_color,
-        width=width,
-        height=height,
-        auto_rotate=str(auto_rotate).lower(),
-        show_grid=str(show_grid).lower(),
-        glb_base64=glb_base64,
-    )
-    
-    # Streamlitにビューアを埋め込み
-    st.subheader("3D ビューア")
-    st.write(f"選択した試験データのファン: {fan_name}")
-    components.html(threejs_html, height=height + 20, scrolling=False)
-    
-    st.markdown("""
-    ### 操作方法
-    - **左クリック + ドラッグ**: モデルを回転
-    - **右クリック + ドラッグ**: カメラ移動
-    - **マウスホイール**: ズームイン/アウト
-    """)
+if len(df) == 0:
+    st.info("試験データが見つかりません")
 else:
-    st.warning("モデルファイルを選択してください")
+    viewer_candidates = selected_tests if selected_tests else list(range(len(df)))
+    viewer_index = st.selectbox(
+        "3Dビューで表示する試験データ",
+        options=viewer_candidates,
+        format_func=lambda i: test_options[i]
+    )
+
+    target_row = df.iloc[viewer_index]
+    fan_name = target_row.get('FanName') or target_row.get('fanID') or f"Test-{target_row.get('id', viewer_index)}"
+    model_identifier = pick_model_identifier(target_row)
+
+    if not model_identifier:
+        st.error("試験データにモデル識別子 (model, FanName など) が見つかりません。")
+    else:
+        try:
+            model_path = resolve_glb_path(model_identifier, base_dir=".models")
+        except FileNotFoundError as exc:
+            st.error(str(exc))
+        else:
+            import base64
+
+            with open(model_path, 'rb') as f:
+                glb_data = f.read()
+                glb_base64 = base64.b64encode(glb_data).decode()
+
+            template = Path("three_html/viewer01.html").read_text(encoding="utf-8")
+            threejs_html = template.format(
+                bg_color=bg_color,
+                width=width,
+                height=height,
+                auto_rotate=str(auto_rotate).lower(),
+                show_grid=str(show_grid).lower(),
+                glb_base64=glb_base64,
+            )
+
+            st.write(f"選択した試験データのファン: {fan_name}")
+            components.html(threejs_html, height=height + 20, scrolling=False)
+
+            st.markdown("""
+            ### 操作方法
+            - **左クリック + ドラッグ**: モデルを回転
+            - **右クリック + ドラッグ**: カメラ移動
+            - **マウスホイール**: ズームイン/アウト
+            """)
+            st.caption(f"使用モデル: {model_path}")
 
 # フッター
 st.markdown("---")
