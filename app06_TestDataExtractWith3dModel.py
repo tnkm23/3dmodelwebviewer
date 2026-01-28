@@ -30,70 +30,71 @@ except Exception as e:
     st.info("DBなしモードで動作します。モデルファイルの直接表示のみ利用可能です。")
     DB_CONNECTED = False
 
-# テーブル一覧を取得
-if DB_CONNECTED:
-    st.sidebar.header("データベース情報")
-    if st.sidebar.checkbox("テーブル一覧を表示"):
-        try:
-            tables_query = """
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            ORDER BY table_name;
-            """
-            tables_df = conn.query(tables_query, ttl=0)
-            st.sidebar.write("**テーブル一覧:**")
-            st.sidebar.dataframe(tables_df)
-        except Exception as e:
-            st.sidebar.error(f"テーブル情報取得エラー: {str(e)}")
+'''テーブル一覧取得はモジュール化しして別ファイルで実装する '''
+# # テーブル一覧を取得
+# if DB_CONNECTED:
+#     st.sidebar.header("データベース情報")
+#     if st.sidebar.checkbox("テーブル一覧を表示"):
+#         try:
+#             tables_query = """
+#             SELECT table_name 
+#             FROM information_schema.tables 
+#             WHERE table_schema = 'public'
+#             ORDER BY table_name;
+#             """
+#             tables_df = conn.query(tables_query, ttl=0)
+#             st.sidebar.write("**テーブル一覧:**")
+#             st.sidebar.dataframe(tables_df)
+#         except Exception as e:
+#             st.sidebar.error(f"テーブル情報取得エラー: {str(e)}")
 
-    # 主キー・外部キー情報を取得
-    if st.sidebar.checkbox("キー情報を表示"):
-        try:
-            # 主キー取得
-            pk_query = """
-            SELECT 
-                tc.table_name,
-                kcu.column_name,
-                'PRIMARY KEY' as key_type
-            FROM information_schema.table_constraints tc
-            JOIN information_schema.key_column_usage kcu 
-                ON tc.constraint_name = kcu.constraint_name
-                AND tc.table_schema = kcu.table_schema
-            WHERE tc.constraint_type = 'PRIMARY KEY'
-                AND tc.table_schema = 'public'
-            ORDER BY tc.table_name, kcu.ordinal_position;
-            """
-            pk_df = conn.query(pk_query, ttl=0)
+#     # 主キー・外部キー情報を取得
+#     if st.sidebar.checkbox("キー情報を表示"):
+#         try:
+#             # 主キー取得
+#             pk_query = """
+#             SELECT 
+#                 tc.table_name,
+#                 kcu.column_name,
+#                 'PRIMARY KEY' as key_type
+#             FROM information_schema.table_constraints tc
+#             JOIN information_schema.key_column_usage kcu 
+#                 ON tc.constraint_name = kcu.constraint_name
+#                 AND tc.table_schema = kcu.table_schema
+#             WHERE tc.constraint_type = 'PRIMARY KEY'
+#                 AND tc.table_schema = 'public'
+#             ORDER BY tc.table_name, kcu.ordinal_position;
+#             """
+#             pk_df = conn.query(pk_query, ttl=0)
             
-            # 外部キー取得
-            fk_query = """
-            SELECT 
-                tc.table_name,
-                kcu.column_name,
-                ccu.table_name AS foreign_table_name,
-                ccu.column_name AS foreign_column_name,
-                'FOREIGN KEY' as key_type
-            FROM information_schema.table_constraints AS tc 
-            JOIN information_schema.key_column_usage AS kcu
-                ON tc.constraint_name = kcu.constraint_name
-                AND tc.table_schema = kcu.table_schema
-            JOIN information_schema.constraint_column_usage AS ccu
-                ON ccu.constraint_name = tc.constraint_name
-                AND ccu.table_schema = tc.table_schema
-            WHERE tc.constraint_type = 'FOREIGN KEY'
-                AND tc.table_schema = 'public'
-            ORDER BY tc.table_name;
-            """
-            fk_df = conn.query(fk_query, ttl=0)
+#             # 外部キー取得
+#             fk_query = """
+#             SELECT 
+#                 tc.table_name,
+#                 kcu.column_name,
+#                 ccu.table_name AS foreign_table_name,
+#                 ccu.column_name AS foreign_column_name,
+#                 'FOREIGN KEY' as key_type
+#             FROM information_schema.table_constraints AS tc 
+#             JOIN information_schema.key_column_usage AS kcu
+#                 ON tc.constraint_name = kcu.constraint_name
+#                 AND tc.table_schema = kcu.table_schema
+#             JOIN information_schema.constraint_column_usage AS ccu
+#                 ON ccu.constraint_name = tc.constraint_name
+#                 AND ccu.table_schema = tc.table_schema
+#             WHERE tc.constraint_type = 'FOREIGN KEY'
+#                 AND tc.table_schema = 'public'
+#             ORDER BY tc.table_name;
+#             """
+#             fk_df = conn.query(fk_query, ttl=0)
             
-            st.sidebar.write("**主キー:**")
-            st.sidebar.dataframe(pk_df)
+#             st.sidebar.write("**主キー:**")
+#             st.sidebar.dataframe(pk_df)
             
-            st.sidebar.write("**外部キー:**")
-            st.sidebar.dataframe(fk_df)
-        except Exception as e:
-            st.sidebar.error(f"キー情報取得エラー: {str(e)}")
+#             st.sidebar.write("**外部キー:**")
+#             st.sidebar.dataframe(fk_df)
+#         except Exception as e:
+#             st.sidebar.error(f"キー情報取得エラー: {str(e)}")
 
 # =======================
 # データ取得とキャッシュ
